@@ -45,7 +45,7 @@ After running the program, it will create a file called `plot.png` with a plot o
 
 * `LevCalc`: Main class of the program that contains functions to parse CSV data files, compute leveraged returns, and generate plot data.
 
-  - `set_riskfree_rate(const std::string &file_path)`: Set risk-free rate data from a CSV file.
+  - `set_risk_free_rate(const std::string &file_path)`: Set risk-free rate data from a CSV file.
   - `set_stock_return(const std::string &file_path)`: Set stock return data from a CSV file.
   - `compute_leverage(const long double &leverage, const long double &fee)`: Compute leveraged return for a given leverage and fee.
   - `get_plot_data(const long double &leverage, const long double &fee)`: Get plot data for a given leverage and fee.

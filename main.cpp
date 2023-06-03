@@ -20,18 +20,17 @@ static std::string float_to_string(const long double &num) {
 
 class LevCalc {
 public:
-    using Day       = struct { long double close; };
+    using Day       = struct { long double close; }; // Might add more data later, thus struct
     using Month     = std::map<uint8_t, Day>;
     using Year      = std::array<Month, 12>;
     using AllTime   = std::map<uint16_t, Year>;
-    using PlotData  = std::vector<std::tuple<long double, long double, long double, long double>>;
-    //                                          ^^^^^        ^^^^^        ^^^^^        ^^^^^
-    //                                            x            y            dx           dy
-    //                                          (time)       (price)      (time)       (price)
+    using PlotData  = std::vector<std::tuple<long double, long double>>;
+    //                                          ^^^^^        ^^^^^
+    //                                            x            y
+    //                                          (time)       (price)
     // x = current time in years. i.e. 0.5 = 6 months
     // y = current price
-    // dx = time since last data point
-    // dy = price change since last data point
+
     using PlotCache = std::unordered_map<std::pair<long double, long double>, PlotData,
                              boost::hash<std::pair<long double, long double>>>;
 
@@ -42,7 +41,7 @@ private:
 
 
 
-    std::tuple<uint8_t, uint8_t, uint16_t> parse_date(const std::string &date) {
+    static std::tuple<uint8_t, uint8_t, uint16_t> parse_date(const std::string &date) {
         uint8_t month = std::stoul(date.substr(1, 2)) - 1;
         uint8_t day = std::stoul(date.substr(4, 2));
         uint16_t year = std::stoul(date.substr(7, 4));
@@ -53,7 +52,7 @@ private:
         return {day, month, year};
     }
 
-    AllTime parse_file(std::ifstream &file) {
+    static AllTime parse_file(std::ifstream &file) {
         AllTime res;
         std::string line;
 
@@ -70,7 +69,7 @@ private:
             std::getline(stream, temp, '"');
             temp.clear();
             char c;
-            while((c = stream.get()) != '"') {
+            while((c = static_cast<char>(stream.get())) != '"') {
                 if(std::isdigit(c) || c == '.') temp.push_back(c);
             }
             long double close(std::stod(temp));
@@ -82,7 +81,7 @@ private:
     }
 
 public:
-    LevCalc& set_riskfree_rate(const std::string &file_path) {
+    LevCalc& set_risk_free_rate(const std::string &file_path) {
         std::ifstream file(file_path);
 
         if(!file.is_open()) {
@@ -118,7 +117,7 @@ public:
 
         for(auto &[year, months] : stock_return) {
 
-            // Skip years that don't have risk free rate data
+            // Skip years that don't have risk-free rate data
             if(!have_last_risk_free_rate && !risk_free_rate.contains(year)) continue;
 
             size_t days_in_year = 0, days_passed = 0;
@@ -129,44 +128,46 @@ public:
 
             for(size_t month = 0; auto &days : months) {
 
-                // Skip months that don't have risk free rate data
+                // Skip months that don't have risk-free rate data
                 if(have_last_risk_free_rate || !risk_free_rate[year][month].empty())
                 for(auto &[day, data] : days) {
                     ++days_passed;
                     if(!have_last_risk_free_rate && !risk_free_rate[year][month].contains(day)) continue;
-                    // Skip days that don't have risk free rate data
-
-                    if(!have_last_risk_free_rate) {
-                        last_day_stock_close = last_leveraged_day_stock_close = data.close;
-                        have_last_risk_free_rate = true;
-                        continue;
-                    }
-                    // If we get here, we have a risk free rate for the current day
+                    // Skip days that don't have risk-free rate data
 
                     long double day_stock_close;
                     long double leveraged_day_stock_close;
                     long double day_stock_return;
                     long double day_leverage_return;
+                    long double timestamp;
 
+                    timestamp = year + static_cast<long double>(days_passed) / static_cast<long double>(days_in_year);
+
+                    if(!have_last_risk_free_rate) {
+                        have_last_risk_free_rate = true;
+                        last_risk_free_rate = risk_free_rate[year][month][day].close;
+
+                        last_day_stock_close = last_leveraged_day_stock_close = data.close;
+                        res.emplace_back(timestamp, last_leveraged_day_stock_close);
+                        continue;
+                    }
 
                     day_stock_close = data.close;
 
                     day_stock_return = day_stock_close / last_day_stock_close - 1.0;
 
-                    day_leverage_return = day_stock_return * leverage                     // Return with free leverage
-                            - (leverage - 1.0) * last_risk_free_rate / 100 / days_in_year // Cost of borrowing
-                            - fee / 100 / days_in_year;                                   // Fund management fee
+                    day_leverage_return = day_stock_return * leverage                                               // Return with free leverage
+                            - (leverage - 1.0) * last_risk_free_rate / 100 / static_cast<long double>(days_in_year) // Cost of borrowing
+                            - fee / 100 / static_cast<long double>(days_in_year);                                   // Fund management fee
 
 
                     leveraged_day_stock_close = last_leveraged_day_stock_close * (1.0 + day_leverage_return);
 
-                    res.emplace_back(year + static_cast<long double>(days_passed) / days_in_year,
-                                     leveraged_day_stock_close,
-                                     1.0 / static_cast<long double>(days_in_year),
-                                     leveraged_day_stock_close - last_leveraged_day_stock_close);
 
-                    if(risk_free_rate.contains(year)
-                       && risk_free_rate[year][month].contains(day)) {
+
+                    res.emplace_back(timestamp, leveraged_day_stock_close);
+
+                    if(risk_free_rate.contains(year) && risk_free_rate[year][month].contains(day)) {
                         last_risk_free_rate = risk_free_rate[year][month][day].close;
                     }
                     last_day_stock_close = day_stock_close;
@@ -194,22 +195,18 @@ public:
 int main() {
     LevCalc levCalc;
 
-    levCalc.set_riskfree_rate("USD.csv");
+    levCalc.set_risk_free_rate("USD.csv");
     levCalc.set_stock_return("SP500.csv");
 
     levCalc.compute_leverage(3, 1.0);
     levCalc.compute_leverage(2, 0.6);
     levCalc.compute_leverage(1, 0.2);
-
-
-
+    levCalc.compute_leverage(0.75, 0.1);
 
     Gnuplot gp;
     gp << "set xlabel 'Year'\n";
     gp << "set ylabel 'Price'\n";
     gp << "set title 'Leveraged SP500'\n";
-    gp << "set output 'plot.png'\n";
-    gp << "set terminal png size 1920,1080\n";
 
     auto plots = levCalc.get_plot_cache();
     std::string command("plot ");
@@ -222,8 +219,8 @@ int main() {
     command += "\n";
     gp << command;
 
-    for(auto & plot : plots) {
-        gp.send1d(plot.second);
+    for(auto & [key, plot] : plots) {
+        gp.send1d(plot);
     }
 
     return 0;
