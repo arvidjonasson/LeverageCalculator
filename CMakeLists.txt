@@ -3,6 +3,10 @@ project(LeverageCalculator)
 
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(Boost REQUIRED COMPONENTS filesystem system iostreams)
+# https://cmake.org/cmake/help/latest/module/FindBoost.html
+
 add_executable(LeverageCalculator main.cpp)
-include_directories(/opt/homebrew/include/)
-target_link_libraries(LeverageCalculator /opt/homebrew/lib/libboost_iostreams.a /opt/homebrew/lib/libboost_system.a /opt/homebrew/lib/libboost_filesystem.a)
+
+target_include_directories(LeverageCalculator PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(LeverageCalculator ${Boost_LIBRARIES})
