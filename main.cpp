@@ -39,9 +39,28 @@ private:
     AllTime stock_return;
     PlotCache plot_cache;
 
+public:
+    LevCalc& set_risk_free_rate(const std::string &file_path);
 
+    LevCalc& set_stock_return(const std::string &file_path);
 
-    static std::tuple<uint8_t, uint8_t, uint16_t> parse_date(const std::string &date) {
+    LevCalc& compute_leverage(const long double &leverage, const long double &fee);
+
+    PlotData &get_plot_data(const long double &leverage, const long double &fee) {
+        return plot_cache[std::make_pair(leverage, fee)];
+    }
+
+    PlotCache &get_plot_cache() {
+        return plot_cache;
+    }
+};
+
+class Parser {
+public:
+    using AllTime   = LevCalc::AllTime;
+    using Date      = std::tuple<uint8_t, uint8_t, uint16_t>;
+
+    static Date parse_date(const std::string &date) {
         uint8_t month = std::stoul(date.substr(1, 2)) - 1;
         uint8_t day = std::stoul(date.substr(4, 2));
         uint16_t year = std::stoul(date.substr(7, 4));
@@ -79,57 +98,57 @@ private:
 
         return res;
     }
+};
 
-public:
-    LevCalc& set_risk_free_rate(const std::string &file_path) {
-        std::ifstream file(file_path);
+LevCalc &LevCalc::set_risk_free_rate(const std::string &file_path) {
+    std::ifstream file(file_path);
 
-        if(!file.is_open()) {
-            throw std::runtime_error(file_path + " could not be opened.");
-        }
-
-        risk_free_rate = parse_file(file);
-
-        file.close();
-        return *this;
+    if(!file.is_open()) {
+        throw std::runtime_error(file_path + " could not be opened.");
     }
 
-    LevCalc& set_stock_return(const std::string &file_path) {
-        std::ifstream file(file_path);
+    risk_free_rate = Parser::parse_file(file);
 
-        if(!file.is_open()) {
-            throw std::runtime_error(file_path + " could not be opened.");
-        }
+    file.close();
+    return *this;
+}
 
-        stock_return = parse_file(file);
+LevCalc &LevCalc::set_stock_return(const std::string &file_path) {
+    std::ifstream file(file_path);
 
-        file.close();
-        return *this;
+    if(!file.is_open()) {
+        throw std::runtime_error(file_path + " could not be opened.");
     }
 
-    LevCalc& compute_leverage(const long double &leverage, const long double &fee) {
-        long double last_risk_free_rate = 0.0;
-        bool have_last_risk_free_rate = false;
-        long double last_day_stock_close = 0.0;
-        long double last_leveraged_day_stock_close = 0.0;
+    stock_return = Parser::parse_file(file);
 
-        PlotData res;
+    file.close();
+    return *this;
+}
 
-        for(auto &[year, months] : stock_return) {
+LevCalc &LevCalc::compute_leverage(const long double &leverage, const long double &fee) {
+    long double last_risk_free_rate = 0.0;
+    bool have_last_risk_free_rate = false;
+    long double last_day_stock_close = 0.0;
+    long double last_leveraged_day_stock_close = 0.0;
 
-            // Skip years that don't have risk-free rate data
-            if(!have_last_risk_free_rate && !risk_free_rate.contains(year)) continue;
+    PlotData res;
 
-            size_t days_in_year = 0, days_passed = 0;
+    for(auto &[year, months] : stock_return) {
 
-            for(auto &days : months) {
-                days_in_year += days.size();
-            }
+        // Skip years that don't have risk-free rate data
+        if(!have_last_risk_free_rate && !risk_free_rate.contains(year)) continue;
 
-            for(size_t month = 0; auto &days : months) {
+        size_t days_in_year = 0, days_passed = 0;
 
-                // Skip months that don't have risk-free rate data
-                if(have_last_risk_free_rate || !risk_free_rate[year][month].empty())
+        for(auto &days : months) {
+            days_in_year += days.size();
+        }
+
+        for(size_t month = 0; auto &days : months) {
+
+            // Skip months that don't have risk-free rate data
+            if(have_last_risk_free_rate || !risk_free_rate[year][month].empty())
                 for(auto &[day, data] : days) {
                     ++days_passed;
                     if(!have_last_risk_free_rate && !risk_free_rate[year][month].contains(day)) continue;
@@ -157,8 +176,8 @@ public:
                     day_stock_return = day_stock_close / last_day_stock_close - 1.0;
 
                     day_leverage_return = day_stock_return * leverage                                               // Return with free leverage
-                            - (leverage - 1.0) * last_risk_free_rate / 100 / static_cast<long double>(days_in_year) // Cost of borrowing
-                            - fee / 100 / static_cast<long double>(days_in_year);                                   // Fund management fee
+                                          - (leverage - 1.0) * last_risk_free_rate / 100 / static_cast<long double>(days_in_year) // Cost of borrowing
+                                          - fee / 100 / static_cast<long double>(days_in_year);                                   // Fund management fee
 
 
                     leveraged_day_stock_close = last_leveraged_day_stock_close * (1.0 + day_leverage_return);
@@ -173,24 +192,15 @@ public:
                     last_day_stock_close = day_stock_close;
                     last_leveraged_day_stock_close = leveraged_day_stock_close;
                 } else {
-                    days_passed += days.size();
-                }
-                ++month;
+                days_passed += days.size();
             }
+            ++month;
         }
-
-        plot_cache[std::make_pair(leverage, fee)] = res;
-        return *this;
     }
 
-    PlotData &get_plot_data(const long double &leverage, const long double &fee) {
-        return plot_cache[std::make_pair(leverage, fee)];
-    }
-
-    PlotCache &get_plot_cache() {
-        return plot_cache;
-    }
-};
+    plot_cache[std::make_pair(leverage, fee)] = res;
+    return *this;
+}
 
 int main() {
     LevCalc levCalc;
