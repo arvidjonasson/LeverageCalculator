@@ -62,7 +62,7 @@ public:
 
     static Date parse_date(const std::string &date) {
         uint8_t month = std::stoul(date.substr(1, 2)) - 1;
-        uint8_t day = std::stoul(date.substr(4, 2));
+        uint8_t day   = std::stoul(date.substr(4, 2));
         uint16_t year = std::stoul(date.substr(7, 4));
         //Format is hardcoded to be "MM/DD/YYYY" as that is the data I'm working with
         //It is possible to make a simple parser that would accept multiple formats,
@@ -175,7 +175,7 @@ LevCalc &LevCalc::compute_leverage(const long double &leverage, const long doubl
 
                     day_stock_return = day_stock_close / last_day_stock_close - 1.0;
 
-                    day_leverage_return = day_stock_return * leverage                                               // Return with free leverage
+                    day_leverage_return = day_stock_return * leverage                                                             // Return with free leverage
                                           - (leverage - 1.0) * last_risk_free_rate / 100 / static_cast<long double>(days_in_year) // Cost of borrowing
                                           - fee / 100 / static_cast<long double>(days_in_year);                                   // Fund management fee
 

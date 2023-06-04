@@ -51,6 +51,11 @@ After running the program, you will receive a plot of the leveraged returns for 
   - `get_plot_data(const long double &leverage, const long double &fee)`: Get plot data for a given leverage and fee.
   - `get_plot_cache()`: Get all plot data.
 
+* `Parser`: Helper class to parse CSV files.
+
+  - `parse_file(std::ifstream &file)`: Parse a CSV file and return closing price data.
+  - `parse_date(const std::string &date)`: Parse a date string and return a the date in a tuple.
+
 * `main()`: Main function of the program. It sets risk-free rate and stock return data, computes leveraged return for different scenarios, and generates a plot using Gnuplot.
 
 ## Note
