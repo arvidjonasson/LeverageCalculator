@@ -43,7 +43,7 @@ After running the program, you will receive a plot of the leveraged returns for 
 
 * `float_to_string(const long double &num)`: Helper function to convert float numbers to string with fixed precision.
 
-* `LevCalc`: Main class of the program that contains functions to parse CSV data files, compute leveraged returns, and generate plot data.
+* `LevCalc`: Main class of the program that contains functions to compute leveraged returns and generate plot data.
 
   - `set_risk_free_rate(const std::string &file_path)`: Set risk-free rate data from a CSV file.
   - `set_stock_return(const std::string &file_path)`: Set stock return data from a CSV file.
