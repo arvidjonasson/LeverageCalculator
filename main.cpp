@@ -93,7 +93,7 @@ public:
             }
             long double close(std::stod(temp));
 
-            res[get<2>(date)][get<1>(date)][get<0>(date)] = {close};
+            res[std::get<2>(date)][std::get<1>(date)][std::get<0>(date)] = {close};
         }
 
         return res;

@@ -6,18 +6,18 @@ The code uses CSV files to get data on stock return and risk-free rate, and calc
 
 ## Requirements
 
-* C++17
+* C++20
 * [Gnuplot-iostream](https://github.com/dstahlke/gnuplot-iostream) library
 * Boost library
 
 ## Compilation
 
-To compile this code, you would need a C++ compiler that supports the C++17 standard or later. 
+To compile this code, you would need a C++ compiler that supports the C++20 standard or later. 
 
 For example, you can use the `g++` compiler as follows:
 
 ```
-g++ -std=c++17 -I/path/to/boost/include -I/path/to/gnuplot-iostream -L/path/to/boost/lib -lboost_iostreams -lboost_system -lboost_filesystem main.cpp -o levCalc
+g++ -std=c++20 -I/path/to/boost/include -I/path/to/gnuplot-iostream -L/path/to/boost/lib -lboost_iostreams -lboost_system -lboost_filesystem main.cpp -o levCalc
 ```
 
 Replace `/path/to/boost/include`, `/path/to/gnuplot-iostream` and `/path/to/boost/lib` with the paths where the Boost and Gnuplot-iostream libraries are located on your system.
@@ -54,7 +54,7 @@ After running the program, you will receive a plot of the leveraged returns for 
 * `Parser`: Helper class to parse CSV files.
 
   - `parse_file(std::ifstream &file)`: Parse a CSV file and return closing price data.
-  - `parse_date(const std::string &date)`: Parse a date string and return a the date in a tuple.
+  - `parse_date(const std::string &date)`: Parse a date string and return the date in a tuple.
 
 * `main()`: Main function of the program. It sets risk-free rate and stock return data, computes leveraged return for different scenarios, and generates a plot using Gnuplot.
 
