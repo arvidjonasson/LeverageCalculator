@@ -37,7 +37,10 @@ Once you have these files, you can run the program as follows:
 After running the program, you will receive a plot of the leveraged returns for different leverage and fee scenarios.
 
 ![plot](https://github.com/arvidjonasson/LeverageCalculator/assets/111796600/a667216c-48c2-4b0f-ada8-69303d346009)
-- An example comparing `3X`, `2X`, `unlevered` and `0.75X` with `1%`, `0.6%`, `0.2%` and `0.1%` in annual fees respectively.
+- An example comparing `3X`, `2X`, `1X (unlevered)` and `0.75X` with `1%`, `0.6%`, `0.2%` and `0.1%` in annual fees respectively.
+
+![plot](https://github.com/arvidjonasson/LeverageCalculator/assets/111796600/eced4fce-e0d7-47ef-8e4e-ac173d37a0fd)
+- An example comparing `1X (unlevered)`, `0X (money-market)` and `-1X` with `0%` in annual fees each.
 
 ## Code Overview
 
