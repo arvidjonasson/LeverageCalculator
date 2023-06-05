@@ -10,3 +10,9 @@ add_executable(LeverageCalculator main.cpp)
 
 target_include_directories(LeverageCalculator PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(LeverageCalculator ${Boost_LIBRARIES})
+
+if(MSVC)
+    target_compile_options(LeverageCalculator PRIVATE /W4 /WX)
+else()
+    target_compile_options(LeverageCalculator PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

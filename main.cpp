@@ -202,21 +202,37 @@ LevCalc &LevCalc::compute_leverage(const long double &leverage, const long doubl
     return *this;
 }
 
-int main() {
+int main(const int argc, const char * const * const argv) {
+    if (argc < 5 || (argc - 3) % 2 != 0) {
+        std::cerr << "Usage: " << argv[0] << " <risk_free_rate_file> <stock_return_file> <leverage> <fee>" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    std::string risk_free_rate_file(argv[1]);
+    std::string stock_return_file(argv[2]);
+
+    std::vector<std::pair<long double, long double>> leverage_fees;
+    leverage_fees.reserve((argc - 3) / 2);
+
+    for(int i = 3; i < argc; i += 2) {
+        leverage_fees.emplace_back(std::stold(argv[i]), std::stold(argv[i + 1]));
+    }
+
     LevCalc levCalc;
 
-    levCalc.set_risk_free_rate("USD.csv");
-    levCalc.set_stock_return("SP500.csv");
+    levCalc.set_risk_free_rate(risk_free_rate_file);
+    levCalc.set_stock_return(stock_return_file);
 
-    levCalc.compute_leverage(3, 1.0);
-    levCalc.compute_leverage(2, 0.6);
-    levCalc.compute_leverage(1, 0.2);
-    levCalc.compute_leverage(0.75, 0.1);
+    for(auto const& [leverage, fee] : leverage_fees) {
+        levCalc.compute_leverage(leverage, fee);
+    }
 
     Gnuplot gp;
     gp << "set xlabel 'Year'\n";
     gp << "set ylabel 'Price'\n";
     gp << "set title 'Leveraged SP500'\n";
+    //gp << "set output 'plot.png'\n";
+    //gp << "set term png size 1920,1080\n";
 
     auto plots = levCalc.get_plot_cache();
     std::string command("plot ");
@@ -233,5 +249,5 @@ int main() {
         gp.send1d(plot);
     }
 
-    return 0;
+    std::exit(EXIT_SUCCESS);
 }
