@@ -19,6 +19,37 @@ static std::string float_to_string(const long double &num) {
     return stream.str();
 }
 
+static void plot_data(const LevCalc::PlotCache &plot_data) {
+    Gnuplot gp;
+    gp << "set xlabel 'Year'\n";
+    gp << "set ylabel 'Price'\n";
+    gp << "set title 'Leveraged SP500'\n";
+    //gp << "set output 'plot.png'\n";
+    //gp << "set term png size 1920,1080\n";
+    
+    std::string command("plot ");
+    for(auto & plot : plot_data) {
+        command += "'-' with lines title '" + float_to_string(plot.first.first) + "X, " + float_to_string(plot.first.second) + "%', ";
+    }
+
+    command.pop_back();
+    command.pop_back();
+    command += "\n";
+    gp << command;
+
+    for(auto const & [key, plot] : plot_data) {
+        gp.send1d(plot);
+    }
+
+#ifdef _WIN32
+	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
+	// the gnuplot window doesn't get closed.
+	std::cout << "Press enter to exit." << std::endl;
+	std::cin.get();
+    // http://stahlke.org/dan/gnuplot-iostream/
+#endif
+}
+
 int main(const int argc, const char *const *const argv) {
     if (argc < 5 || (argc - 3) % 2 != 0) {
         std::cerr << "Usage: " << argv[0] << " <risk_free_rate_file> <stock_return_file> <leverage1> <fee1> [<leverage2> <fee2> ...]" << std::endl;
@@ -48,35 +79,14 @@ int main(const int argc, const char *const *const argv) {
         levCalc.compute_leverage(leverage, fee);
     }
 
-    Gnuplot gp;
-    gp << "set xlabel 'Year'\n";
-    gp << "set ylabel 'Price'\n";
-    gp << "set title 'Leveraged SP500'\n";
-    //gp << "set output 'plot.png'\n";
-    //gp << "set term png size 1920,1080\n";
+    const auto &plots = levCalc.get_plot_cache();
 
-    auto plots = levCalc.get_plot_cache();
-    std::string command("plot ");
-    for(auto & plot : plots) {
-        command += "'-' with lines title '" + float_to_string(plot.first.first) + "X, " + float_to_string(plot.first.second) + "%', ";
+    if(plots.empty()) {
+        std::cerr << "No data to plot" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
-    command.pop_back();
-    command.pop_back();
-    command += "\n";
-    gp << command;
-
-    for(auto const & [key, plot] : plots) {
-        gp.send1d(plot);
-    }
-
-#ifdef _WIN32
-	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
-	// the gnuplot window doesn't get closed.
-	std::cout << "Press enter to exit." << std::endl;
-	std::cin.get();
-    // http://stahlke.org/dan/gnuplot-iostream/
-#endif
+    plot_data(plots);
 
     std::exit(EXIT_SUCCESS);
 }
