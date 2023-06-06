@@ -1,15 +1,8 @@
-#include <fstream>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <utility>
-#include <map>
-#include <unordered_map>
 #include <sstream>
-#include <array>
-#include <tuple>
-#include <stdexcept>
-#include "boost/functional/hash.hpp"
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "levcalc.hpp"
 
@@ -48,14 +41,6 @@ static void plot_data(const LevCalc::PlotCache &plot_data) {
     for(const auto &[key, plot] : plot_data) {
         gp.send1d(plot);
     }
-
-#ifdef _WIN32
-	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
-	// the gnuplot window doesn't get closed.
-	std::cout << "Press enter to exit." << std::endl;
-	std::cin.get();
-    // http://stahlke.org/dan/gnuplot-iostream/
-#endif
 }
 
 int main(const int argc, const char *const *const argv) {
@@ -65,7 +50,7 @@ int main(const int argc, const char *const *const argv) {
         std::cerr << "  <stock_return_file>    Path to the stock return input file (CSV format)" << std::endl;
         std::cerr << "  <leverage>             Leverage for each scenario (decimal number with 2 decimal places)" << std::endl;
         std::cerr << "  <fee>                  Fee for each scenario (decimal number with 2 decimal places)" << std::endl;
-        std::exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     const std::string risk_free_rate_file (argv[1]);
@@ -91,10 +76,18 @@ int main(const int argc, const char *const *const argv) {
 
     if(plots.empty()) {
         std::cerr << "No data to plot" << std::endl;
-        std::exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     plot_data(plots);
 
-    std::exit(EXIT_SUCCESS);
+#ifdef _WIN32
+	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
+	// the gnuplot window doesn't get closed.
+	std::cout << "Press enter to exit." << std::endl;
+	std::cin.get();
+    // http://stahlke.org/dan/gnuplot-iostream/
+#endif
+
+    return EXIT_SUCCESS;
 }
