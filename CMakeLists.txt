@@ -4,12 +4,21 @@ project(LeverageCalculator)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Boost REQUIRED COMPONENTS filesystem system iostreams)
-# https://cmake.org/cmake/help/latest/module/FindBoost.html
 
-add_executable(LeverageCalculator main.cpp)
+add_executable(LeverageCalculator)
+add_subdirectory(src)
 
-target_include_directories(LeverageCalculator PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(LeverageCalculator ${Boost_LIBRARIES})
+target_include_directories(LeverageCalculator PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+)
+
+target_link_libraries(LeverageCalculator 
+    PRIVATE
+    Boost::filesystem
+    Boost::system
+    Boost::iostreams
+)
 
 if(MSVC)
     target_compile_options(LeverageCalculator PRIVATE /W4 /WX)
