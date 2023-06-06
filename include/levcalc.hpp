@@ -22,9 +22,9 @@ public:
     //                                          (time)       (price)
     // x = current time in years. i.e. 0.5 = 6 months
     // y = current price
-
-    using PlotCache = std::unordered_map<std::pair<long double, long double>, PlotData,
-                             boost::hash<std::pair<long double, long double>>>;
+    using PlotCacheHash = boost::hash<std::pair<long double, long double>>;
+    using PlotCacheKey  = std::pair<long double, long double>;
+    using PlotCache     = std::unordered_map<PlotCacheKey, PlotData, PlotCacheHash>;
 
 private:
     AllTime risk_free_rate;

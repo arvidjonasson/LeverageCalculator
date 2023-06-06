@@ -13,31 +13,39 @@
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "levcalc.hpp"
 
-static std::string float_to_string(const long double &num) {
-    std::stringstream stream;
-    stream << std::fixed << std::setprecision(2) << num;
-    return stream.str();
-}
-
 static void plot_data(const LevCalc::PlotCache &plot_data) {
+    auto iterator = plot_data.cbegin();
+    std::ostringstream command;
+
+    auto add_plot = [&command, &iterator]() {
+        const auto &[key, plot]     = *iterator;
+        const auto &[leverage, fee] = key;
+
+        command << "'-' with lines title '" << leverage << "X, " << fee << "%'";
+        ++iterator;
+    };
+
     Gnuplot gp;
     gp << "set xlabel 'Year'\n";
     gp << "set ylabel 'Price'\n";
     gp << "set title 'Leveraged SP500'\n";
     //gp << "set output 'plot.png'\n";
     //gp << "set term png size 1920,1080\n";
-    
-    std::string command("plot ");
-    for(auto & plot : plot_data) {
-        command += "'-' with lines title '" + float_to_string(plot.first.first) + "X, " + float_to_string(plot.first.second) + "%', ";
+
+    command << std::fixed << std::setprecision(2);
+    command << "plot ";
+
+    add_plot();
+
+    while(iterator != plot_data.cend()) {
+        command << ", ";
+        add_plot();
     }
 
-    command.pop_back();
-    command.pop_back();
-    command += "\n";
-    gp << command;
+    command << '\n';
+    gp << command.str();
 
-    for(auto const & [key, plot] : plot_data) {
+    for(const auto &[key, plot] : plot_data) {
         gp.send1d(plot);
     }
 
