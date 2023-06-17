@@ -4,29 +4,39 @@
 #include <fstream>
 #include <stdexcept>
 
-LevCalc &LevCalc::set_risk_free_rate(const std::string &file_path) {
+namespace fs = std::filesystem;
+
+static std::ifstream check_and_open_file(const fs::path &file_path) {
+    if (!fs::exists(file_path))
+        throw std::runtime_error(file_path.string() + " does not exist.");
+
+    if (!fs::is_regular_file(file_path))
+        throw std::runtime_error(file_path.string() + " is not a file.");
+
     std::ifstream file(file_path);
 
-    if(!file.is_open()) {
-        throw std::runtime_error(file_path + " could not be opened.");
-    }
+    if (!file.is_open())
+        throw std::runtime_error(file_path.string() + " could not be opened.");
 
-    risk_free_rate = Parser::parse_file(file);
+    return file;
+}
+
+static auto generic_set(const fs::path &file_path) {
+    std::ifstream file{ check_and_open_file(file_path) };
+
+    auto result = Parser::parse_file(file);
 
     file.close();
+    return result;
+}
+
+LevCalc &LevCalc::set_risk_free_rate(const fs::path &file_path) {
+    risk_free_rate = generic_set(file_path);
     return *this;
 }
 
-LevCalc &LevCalc::set_stock_return(const std::string &file_path) {
-    std::ifstream file(file_path);
-
-    if(!file.is_open()) {
-        throw std::runtime_error(file_path + " could not be opened.");
-    }
-
-    stock_return = Parser::parse_file(file);
-
-    file.close();
+LevCalc &LevCalc::set_stock_return(const fs::path &file_path) {
+    stock_return = generic_set(file_path);
     return *this;
 }
 

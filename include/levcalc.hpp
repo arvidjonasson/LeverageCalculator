@@ -2,6 +2,8 @@
 #ifndef LEVCALC_HPP
 #define LEVCALC_HPP
 
+#include <string>
+#include <filesystem>
 #include <unordered_map>
 #include <array>
 #include <tuple>
@@ -32,9 +34,16 @@ private:
     PlotCache plot_cache;
 
 public:
-    LevCalc& set_risk_free_rate(const std::string &file_path);
+    LevCalc() = default;
 
-    LevCalc& set_stock_return(const std::string &file_path);
+    LevCalc(const std::filesystem::path &risk_free_rate, const std::filesystem::path &stock_return) {
+        set_risk_free_rate(risk_free_rate);
+        set_stock_return(stock_return);
+    }
+
+    LevCalc& set_risk_free_rate(const std::filesystem::path &file_path);
+
+    LevCalc& set_stock_return(const std::filesystem::path &file_path);
 
     LevCalc& compute_leverage(const long double &leverage, const long double &fee);
 
@@ -42,7 +51,7 @@ public:
         return plot_cache[std::make_pair(leverage, fee)];
     }
 
-    PlotCache &get_plot_cache() {
+    PlotCache &get_plot_data() {
         return plot_cache;
     }
 };

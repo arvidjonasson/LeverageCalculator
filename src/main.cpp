@@ -64,6 +64,8 @@ int main(const int argc, const char *const *const argv) {
         return EXIT_FAILURE;
     }
 
+    LevCalc levCalc(RISK_FREE_RATE, STOCK_RETURN);
+
     std::vector<std::pair<long double, long double>> leverage_fees;
     leverage_fees.reserve(NUMBER_OF_PLOTS);
 
@@ -71,16 +73,11 @@ int main(const int argc, const char *const *const argv) {
         leverage_fees.emplace_back(std::stold(LEV(i)), std::stold(FEE(i)));
     }
 
-    LevCalc levCalc;
-
-    levCalc.set_risk_free_rate(RISK_FREE_RATE);
-    levCalc.set_stock_return(STOCK_RETURN);
-
     for(auto const& [leverage, fee] : leverage_fees) {
         levCalc.compute_leverage(leverage, fee);
     }
 
-    const auto &plots = levCalc.get_plot_cache();
+    const auto &plots = levCalc.get_plot_data();
 
     if(plots.empty()) {
         std::cerr << "No data to plot" << std::endl;
