@@ -6,6 +6,14 @@
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "levcalc.hpp"
 
+#define PROGRAM_NAME    (argv[0])
+#define RISK_FREE_RATE  (argv[1])
+#define STOCK_RETURN    (argv[2])
+#define LEV(X)          (argv[3 + 2 * X])
+#define FEE(X)          (argv[4 + 2 * X])
+#define NUMBER_OF_PLOTS (argc < 5 ? 0 : ((argc - 3) / 2))
+#define INCORRECT_ARGS  (argc < 5 ? 1 : ((argc - 3) % 2)) //If NUMBER_OF_PLOTS == 0 or LEV.size() != FEE.size()
+
 static void plot_data(const LevCalc::PlotCache &plot_data) {
     auto iterator = plot_data.cbegin();
     std::ostringstream command;
@@ -44,29 +52,29 @@ static void plot_data(const LevCalc::PlotCache &plot_data) {
 }
 
 int main(const int argc, const char *const *const argv) {
-    if (argc < 5 || (argc - 3) % 2 != 0) {
-        std::cerr << "Usage: " << argv[0] << " <risk_free_rate_file> <stock_return_file> <leverage1> <fee1> [<leverage2> <fee2> ...]" << std::endl;
+    if (INCORRECT_ARGS) {
+        // If the program wasn't called with the correct argument
+
+        std::cerr << "Usage: " << PROGRAM_NAME << " <risk_free_rate_file> <stock_return_file> <leverage1> <fee1> [<leverage2> <fee2> ...]" << std::endl;
         std::cerr << "  <risk_free_rate_file>  Path to the risk-free rate input file (CSV format)" << std::endl;
         std::cerr << "  <stock_return_file>    Path to the stock return input file (CSV format)" << std::endl;
         std::cerr << "  <leverage>             Leverage for each scenario (decimal number with 2 decimal places)" << std::endl;
         std::cerr << "  <fee>                  Fee for each scenario (decimal number with 2 decimal places)" << std::endl;
+
         return EXIT_FAILURE;
     }
 
-    const std::string risk_free_rate_file (argv[1]);
-    const std::string stock_return_file   (argv[2]);
-
     std::vector<std::pair<long double, long double>> leverage_fees;
-    leverage_fees.reserve((argc - 3) / 2);
+    leverage_fees.reserve(NUMBER_OF_PLOTS);
 
-    for(int i = 3; i < argc; i += 2) {
-        leverage_fees.emplace_back(std::stold(argv[i]), std::stold(argv[i + 1]));
+    for(int i = 0; i < NUMBER_OF_PLOTS; ++i) {
+        leverage_fees.emplace_back(std::stold(LEV(i)), std::stold(FEE(i)));
     }
 
     LevCalc levCalc;
 
-    levCalc.set_risk_free_rate(risk_free_rate_file);
-    levCalc.set_stock_return(stock_return_file);
+    levCalc.set_risk_free_rate(RISK_FREE_RATE);
+    levCalc.set_stock_return(STOCK_RETURN);
 
     for(auto const& [leverage, fee] : leverage_fees) {
         levCalc.compute_leverage(leverage, fee);
